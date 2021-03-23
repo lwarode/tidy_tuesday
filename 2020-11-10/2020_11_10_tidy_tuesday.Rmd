@@ -1,0 +1,136 @@
+---
+title: "Tidy Tuesday"
+author: "Lukas Warode"
+date: 2020-11-10
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    theme: cosmo
+    code_folding: hide
+---
+
+# TidyTuesday
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(tidytuesdayR)
+library(skimr)
+library(lisa)
+library(scales)
+
+knitr::opts_chunk$set(echo = TRUE)
+
+theme_set(theme_linedraw())
+```
+
+# Load the weekly Data
+
+Dowloading the weekly data as `tt_data`.
+
+```{r load weekly data, collapse=TRUE, message=FALSE}
+# load data with tt function
+tt_data <- tt_load("2020-11-10") 
+
+# mobile subset
+tt_mobile <- tt_data$mobile
+
+# landline subset
+tt_landline <- tt_data$landline
+
+# df / tibble with all 
+tt_all <- tt_mobile %>% 
+  filter(year < 2014) %>% 
+  select(entity, year, mobile_subs) %>% 
+  full_join(tt_landline, by = c("entity", "year")) %>% 
+  filter(year < 2014)
+```
+
+# Inspect Data
+
+Take an initial look at the format of the data available.
+
+```{r inspect data}
+# glimpse
+tt_data %>%
+  map(glimpse)
+
+# skim
+tt_data %>% 
+  map(skim)
+```
+
+# Data Wrangling
+
+```{r data wrangling}
+tt_continent_sum <- tt_all %>% 
+  mutate(gdp = total_pop * gdp_per_cap,
+         mobile_subs_total = mobile_subs / 100 * total_pop,
+         landline_subs_total = landline_subs / 100 * total_pop) %>% 
+  group_by(continent, year) %>% 
+  summarise(gdp_sum = sum(gdp, na.rm = TRUE),
+            mobile_subs_total_sum = sum(mobile_subs_total, na.rm = TRUE),
+            landline_subs_total_sum = sum(landline_subs_total, na.rm = TRUE))
+
+tt_continent_sum_long <- tt_continent_sum %>% 
+  pivot_longer(cols = ends_with("total_sum"), names_to = "sum_type", values_to = "sum") %>% 
+  filter(! is.na(continent))
+```
+
+# Data Visualization {.tabset .tabset-pills}
+
+## Static Plot {.tabset .tabset-fade}
+
+### Mobile
+
+```{r data vis mobile I}
+# mobile subs per year
+tt_continent_sum %>% 
+  ggplot(aes(x = landline_subs_total_sum, y = mobile_subs_total_sum, color = continent)) +
+  scale_color_manual(values = lisa$MarcChagall) +
+  facet_wrap(~ continent) +
+  geom_point()
+    
+tt_continent_sum_long %>% 
+  filter(continent != "Oceania") %>% 
+  ggplot(aes(x = year, y = sum, fill = sum_type)) +
+  scale_fill_manual(values = lisa$MarcChagall, labels = c("Landline Subscriptions (Sum per Year)",
+                                                          "Mobile Subscriptions (Sum per Year)")) +
+  scale_y_continuous(labels = unit_format(unit = "Mil.", scale = 1e-6)) +
+  geom_col(position = "dodge") +
+  lemon::facet_rep_wrap(~ continent, nrow = 2, repeat.tick.labels = TRUE) +
+  theme(legend.position = "top",
+        legend.title = element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        text = element_text(family = "Geneva")) +
+  labs(title = "Landline and Mobile Subscriptions",
+       subtitle = "Grouped by Continent",
+       x = "Year",
+       y = "Sum of Subsriptions")
+
+# # mobile subs per total gdp
+# tt_mobile_continent %>% 
+#   mutate(mobile_subs_total_sum_1000 = mobile_subs_total_sum / 1000,
+#          gdp_sum_1000 = gdp_sum / 1000) %>% 
+#   ggplot(aes(x = gdp_sum_1000, y = gdp_sum_1000, color = continent), label = paste0(continent, " | ", year)) +
+#   geom_point() 
+#   # scale_y_continuous(label = label_number(), breaks = seq(0, 4000000000, 500000000))  +
+#   # scale_x_continuous(label = label_number() / 1000)  
+  
+ggsave(
+  "plot_tt_2020-11-10.png",
+  plot = last_plot(),
+  heigh = 7,
+  width = (7 * 297/210)
+)
+  
+```
+
+### Landline
+
+```{r data vis I}
+
+
+  
+```
