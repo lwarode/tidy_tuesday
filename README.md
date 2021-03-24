@@ -1,4 +1,4 @@
-# tidy_tuesday
+# tidytuesday
 
 My contributions (data manipulation and visualization) for [#tidytuesday](https://github.com/rfordatascience/tidytuesday)
 
