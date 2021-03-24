@@ -16,4 +16,8 @@ ___
 
 ## 2021
 
-### 2020-11-10 (Week 13)
+### 2021-03-23 (Week 13)
+
+<p align="center">
+  <img src="2021-03-23/all_plots.png" width="700px">
+</p>
